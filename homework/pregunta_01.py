@@ -4,14 +4,38 @@
 """
 Escriba el codigo que ejecute la accion solicitada en cada pregunta.
 """
-import pandas as pd
-import glob
-import re
 import os
-
+import zipfile
+import pandas as pd
 
 def pregunta_01():
-    """
+    with zipfile.ZipFile("files/input.zip", "r") as zip_ref:
+        zip_ref.extractall("files")
+
+    def procesar_datos(tipo):
+        datos = []
+        for i in ["negative", "positive", "neutral"]:
+            ruta = f"files/input/{tipo}/{i}"
+            for archivo in os.listdir(ruta):
+                with open(os.path.join(ruta, archivo), "r", encoding="utf-8") as f:
+                    datos.append({"phrase": f.read().strip(), "target": i})
+        return datos
+
+    train_data = procesar_datos("train")
+    test_data = procesar_datos("test")
+
+    df_train = pd.DataFrame(train_data)
+    df_test = pd.DataFrame(test_data)
+
+    os.makedirs("files/output", exist_ok=True)
+
+    df_train.to_csv("files/output/train_dataset.csv", index=False)
+    df_test.to_csv("files/output/test_dataset.csv", index=False)
+
+pregunta_01()
+
+
+"""
     La información requerida para este laboratio esta almacenada en el
     archivo "files/input.zip" ubicado en la carpeta raíz.
     Descomprima este archivo.
@@ -75,53 +99,3 @@ def pregunta_01():
 
 
     """
-
-    """Load text files in 'input_directory/'"""
-    #
-    # Lea los archivos de texto en la carpeta input/ y almacene el contenido en
-    # un DataFrame de Pandas. Cada línea del archivo de texto debe ser una
-    # entrada en el DataFrame.
-    #
-
-    train_dataset = load_data("train")
-    save_output(train_dataset, "train_dataset")
-    test_dataset = load_data("test")
-    save_output(test_dataset, "test_dataset")
-
-
-def load_data(ruta):
-    # Usamos glob para obtener los archivos txt
-    archivos = glob.glob(f"files/input/{ruta}/**/*.txt", recursive=True)
-
-    # Leemos los archivos y agregamos una columna con el nombre del directorio
-    dataframes_train = []
-    for archivo in archivos:
-        # Leer el archivo como un DataFrame
-        df = pd.read_csv(archivo, header=None, names=["phrase"])
-        # Obtener el nombre del directorio que contiene el archivo
-        directorio = os.path.basename(os.path.dirname(archivo))
-        # Agregar el nombre del directorio como una nueva columna
-        df["target"] = directorio
-        # Agregar este DataFrame a la lista
-        dataframes_train.append(df)
-
-    # Concatenar todos los DataFrames en uno solo
-    dataframe = pd.concat(dataframes_train, ignore_index=True)
-
-    return dataframe
-
-
-def save_output(dataframe, name, output_directory="files/output"):
-    """Save output to a file."""
-
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
-    dataframe.to_csv(
-        f"{output_directory}/{name}.csv",
-        index=False,
-    )
-
-
-if "__main__" in __name__:
-    pregunta_01()
